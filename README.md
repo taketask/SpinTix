@@ -13,3 +13,7 @@ Spin game with real money
 Scratch and win cash app
 Earn points and redeem PayPal
 Refer and earn website
+spintix
+tixspin
+spin
+free spintix
