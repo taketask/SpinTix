@@ -1,0 +1,2581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SpinEarn - Spin & Earn</title>
+    <!-- Google Font: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+    <!-- Firebase SDK -->
+    <!-- Add the core Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
+    <!-- Add the Firebase products you need -->
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore-compat.js"></script>
+    <!-- Uncomment if you implement Cloud Functions -->
+    <!-- <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-functions-compat.js"></script> -->
+
+    <style>
+        /* --- CSS Variables --- */
+        :root {
+            --primary-color: #3b82f6; /* Blue 500 */
+            --primary-color-dark: #2563eb; /* Blue 600 */
+            --primary-color-light: #93c5fd; /* Blue 300 */
+            --surface-color: #ffffff;
+            --background-color: #f3f4f6; /* Gray 100 */
+            --dark-color: #1f2937;    /* Gray 800 */
+            --text-color-dark: #e5e7eb; /* Gray 200 */
+            --text-color-light: #111827; /* Gray 900 */
+            --text-color-medium: #6b7280; /* Gray 500 */
+            --error-color: #ef4444;    /* Red 500 */
+            --success-color: #22c55e;  /* Green 500 */
+            --warning-color: #f59e0b;  /* Amber 500 */
+            --border-color: #e5e7eb; /* Gray 200 */
+
+            --header-height: 60px;
+            --sidebar-width-desktop: 250px;
+            --sidebar-width-mobile: 280px;
+        }
+
+        /* --- Base & Reset --- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color-light);
+            line-height: 1.6;
+            font-size: 16px;
+            overflow-x: hidden; /* Prevent horizontal scroll */
+        }
+
+        a {
+            color: var(--primary-color);
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+
+        a:hover {
+            color: var(--primary-color-dark);
+            text-decoration: underline;
+        }
+
+        img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        ul {
+            list-style: none;
+        }
+
+        button {
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            border: none;
+            border-radius: 6px;
+            padding: 10px 15px;
+            font-size: 1rem;
+            transition: background-color 0.2s ease, opacity 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: var(--surface-color);
+        }
+        .btn-primary:hover:not(:disabled) {
+            background-color: var(--primary-color-dark);
+            text-decoration: none;
+        }
+
+        .btn-success {
+            background-color: var(--success-color);
+             color: var(--surface-color);
+        }
+        .btn-success:hover:not(:disabled) {
+            background-color: #16a34a; /* Green 600 */
+             text-decoration: none;
+        }
+
+        .btn-danger {
+            background-color: var(--error-color);
+             color: var(--surface-color);
+        }
+        .btn-danger:hover:not(:disabled) {
+            background-color: #dc2626; /* Red 600 */
+             text-decoration: none;
+        }
+
+         .btn-warning {
+            background-color: var(--warning-color);
+             color: var(--text-color-light);
+        }
+        .btn-warning:hover:not(:disabled) {
+            background-color: #d97706; /* Amber 600 */
+             text-decoration: none;
+        }
+
+
+        input[type="text"],
+        input[type="password"],
+        input[type="email"],
+        input[type="number"],
+        select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 1rem;
+            margin-bottom: 10px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: var(--text-color-medium);
+        }
+
+        /* --- Layout Structure --- */
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            position: relative; /* Needed for absolute positioning of sidebar/overlay */
+            overflow-x: hidden;
+        }
+
+        /* --- Header --- */
+        .app-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: var(--header-height);
+            background-color: var(--surface-color);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 15px;
+            z-index: 1000;
+        }
+
+        .header-left, .header-right {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        #menu-toggle {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: var(--text-color-light);
+            padding: 5px;
+            display: block; /* Visible on mobile */
+        }
+
+        .app-logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            display: block; /* Visible on mobile */
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .user-profile i {
+            font-size: 1.8rem;
+            color: var(--primary-color);
+        }
+
+        .user-greeting {
+            display: none; /* Hidden by default, shown on tablet+ */
+            font-weight: 500;
+        }
+
+        /* --- Sidebar --- */
+        .app-sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: var(--sidebar-width-mobile);
+            height: 100%;
+            background-color: var(--dark-color);
+            color: var(--text-color-dark);
+            padding-top: var(--header-height); /* Space for fixed header */
+            transform: translateX(-100%);
+            transition: transform 0.3s ease-in-out;
+            z-index: 1100;
+            overflow-y: auto;
+        }
+
+        .app-sidebar.open {
+            transform: translateX(0);
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .sidebar-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1050;
+            display: none; /* Hidden by default */
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+        }
+
+        .sidebar-overlay.open {
+            display: block;
+            opacity: 1;
+        }
+
+        .sidebar-nav ul {
+            padding: 20px 0;
+        }
+
+        .sidebar-nav li a {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 12px 20px;
+            color: var(--text-color-dark);
+            font-weight: 500;
+            transition: background-color 0.2s ease, color 0.2s ease;
+            border-left: 4px solid transparent;
+        }
+
+        .sidebar-nav li a i {
+            width: 20px;
+            text-align: center;
+            font-size: 1.1rem;
+            color: var(--primary-color-light);
+        }
+
+        .sidebar-nav li a:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            text-decoration: none;
+            color: var(--surface-color);
+        }
+
+        .sidebar-nav li a.active {
+            background-color: var(--primary-color);
+            color: var(--surface-color);
+            border-left-color: var(--primary-color-light);
+            font-weight: 600;
+        }
+
+        .sidebar-nav li a.active i {
+             color: var(--surface-color);
+        }
+
+        /* --- Main Content Area --- */
+        .app-main {
+            flex-grow: 1;
+            padding: calc(var(--header-height) + 20px) 15px 20px 15px;
+            transition: margin-left 0.3s ease-in-out; /* For desktop sidebar push */
+        }
+
+        /* --- Page Content Styling --- */
+        .page-content {
+            display: none; /* Hidden by default, shown via JS */
+            opacity: 0;
+            animation: fadeIn 0.5s ease forwards;
+        }
+
+        .page-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .page-title {
+            font-size: 1.8rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: var(--text-color-light);
+        }
+
+        .card {
+            background-color: var(--surface-color);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+            margin-bottom: 20px;
+        }
+
+        /* --- Authentication Pages --- */
+        .auth-page {
+            max-width: 400px;
+            margin: 40px auto;
+            padding: 30px;
+        }
+
+        .auth-page h2 {
+            text-align: center;
+            margin-bottom: 25px;
+            font-size: 1.8rem;
+            font-weight: 600;
+        }
+
+        .auth-page form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .auth-page .form-group {
+             margin-bottom: 10px;
+        }
+
+        .auth-page .form-link {
+            text-align: center;
+            margin-top: 15px;
+            font-size: 0.9rem;
+        }
+
+        .auth-page .form-link a {
+            font-weight: 500;
+        }
+
+        .input-hint {
+             font-size: 0.8rem;
+             color: var(--text-color-medium);
+             margin-top: -5px;
+             margin-bottom: 10px;
+        }
+
+        /* --- Dashboard --- */
+        .welcome-message {
+            font-size: 1.3rem;
+            font-weight: 500;
+            margin-bottom: 20px;
+        }
+
+        .stats-panel {
+            display: grid;
+            grid-template-columns: 1fr; /* Mobile: 1 column */
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .stat-card {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            background-color: var(--surface-color);
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-card .icon-wrapper {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--surface-color);
+            font-size: 1.3rem;
+        }
+         .stat-card .icon-wrapper.bg-blue { background-color: var(--primary-color); }
+         .stat-card .icon-wrapper.bg-green { background-color: var(--success-color); }
+         .stat-card .icon-wrapper.bg-yellow { background-color: var(--warning-color); }
+         .stat-card .icon-wrapper.bg-red { background-color: var(--error-color); }
+
+        .stat-card .stat-info .label {
+            font-size: 0.9rem;
+            color: var(--text-color-medium);
+            margin-bottom: 2px;
+        }
+
+        .stat-card .stat-info .value {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--text-color-light);
+        }
+
+        .spin-action-card {
+            text-align: center;
+        }
+         .spin-action-card p {
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+            color: var(--text-color-medium);
+         }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: 1fr; /* Mobile: 1 column */
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .feature-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            background-color: var(--surface-color);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .feature-card .icon-wrapper-sq {
+            width: 50px;
+            height: 50px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--surface-color);
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+        }
+         .feature-card .icon-wrapper-sq.bg-blue { background-color: var(--primary-color); }
+         .feature-card .icon-wrapper-sq.bg-green { background-color: var(--success-color); }
+         .feature-card .icon-wrapper-sq.bg-yellow { background-color: var(--warning-color); }
+         .feature-card .icon-wrapper-sq.bg-red { background-color: var(--error-color); }
+         .feature-card .icon-wrapper-sq.bg-purple { background-color: #8b5cf6; } /* Violet 500 */
+         .feature-card .icon-wrapper-sq.bg-pink { background-color: #ec4899; } /* Pink 500 */
+         .feature-card .icon-wrapper-sq.bg-teal { background-color: #14b8a6; } /* Teal 500 */
+         .feature-card .icon-wrapper-sq.bg-orange { background-color: #f97316; } /* Orange 500 */
+
+        .feature-card .title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .feature-card .description {
+            font-size: 0.9rem;
+            color: var(--text-color-medium);
+            margin-bottom: 15px;
+            flex-grow: 1; /* Makes descriptions push button down */
+        }
+
+        .activity-log h3 {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+        .activity-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .activity-list li {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 10px;
+            background-color: var(--surface-color);
+            border-radius: 6px;
+        }
+
+        .activity-list .icon-wrapper {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--surface-color);
+            font-size: 1rem;
+            flex-shrink: 0; /* Prevent icon shrinking */
+        }
+         .activity-list .icon-wrapper.bg-blue { background-color: var(--primary-color); }
+         .activity-list .icon-wrapper.bg-green { background-color: var(--success-color); }
+         .activity-list .icon-wrapper.bg-yellow { background-color: var(--warning-color); }
+         .activity-list .icon-wrapper.bg-red { background-color: var(--error-color); }
+         .activity-list .icon-wrapper.bg-purple { background-color: #8b5cf6; }
+
+        .activity-list .activity-details {
+            flex-grow: 1;
+        }
+
+        .activity-list .description {
+            font-size: 0.95rem;
+            color: var(--text-color-light);
+        }
+
+        .activity-list .timestamp {
+            font-size: 0.8rem;
+            color: var(--text-color-medium);
+        }
+
+        .view-all-activity {
+            display: block;
+            text-align: right;
+            margin-top: 15px;
+            font-weight: 500;
+        }
+
+        /* --- Spin Wheel Page --- */
+        .spin-wheel-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            padding: 20px;
+            background-color: var(--surface-color);
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+            position: relative; /* For pointer positioning */
+        }
+
+        .wheel {
+            width: 280px;
+            height: 280px;
+            border-radius: 50%;
+            position: relative;
+            overflow: hidden;
+            border: 8px solid #eab308; /* Yellow 500 - decorative border */
+            background-color: #d1d5db; /* Gray 300 - fallback bg */
+            transition: transform 5s cubic-bezier(0.2, 0.8, 0.2, 1); /* Spin animation */
+        }
+
+        .wheel-segment {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            width: 50%;
+            height: 50%;
+            transform-origin: 0% 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-color-light);
+            clip-path: polygon(0% 0%, 100% 0%, 100% 2%, 50% 100%, 0% 2%); /* Approximates segment shape */
+            padding-left: 15px;
+            padding-top: 10px;
+            box-sizing: border-box;
+            writing-mode: vertical-rl; /* Makes text run down segment */
+            text-orientation: mixed;
+            transform: rotate(var(--rotation)) skewY(var(--skew));
+        }
+         .wheel-segment span {
+             display: inline-block;
+             transform: rotate(180deg); /* Correct text orientation inside vertical */
+             margin-top: 5px;
+         }
+
+        .wheel-pointer {
+            width: 0;
+            height: 0;
+            border-style: solid;
+            border-width: 25px 15px 0 15px;
+            border-color: var(--dark-color) transparent transparent transparent;
+            position: absolute;
+            left: calc(50% - 15px); /* Center the pointer base */
+            top: -5px; /* Position above the wheel */
+            z-index: 10;
+        }
+
+        .wheel-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 30px;
+            height: 30px;
+            background-color: var(--dark-color);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 5;
+            border: 3px solid #eab308;
+        }
+
+        .spin-info {
+            font-size: 1.1rem;
+            font-weight: 500;
+        }
+
+        #spin-result {
+            margin-top: 10px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            min-height: 1.5em; /* Prevent layout shift */
+            color: var(--primary-color);
+        }
+
+        /* --- Slot Machine Page --- */
+        .slots-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            padding: 20px;
+            background-color: var(--surface-color);
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+        }
+
+        .slots-info {
+            font-size: 1.1rem;
+            font-weight: 500;
+            text-align: center;
+        }
+
+        .slots-reels {
+            display: flex;
+            gap: 10px;
+            background-color: var(--dark-color);
+            padding: 15px;
+            border-radius: 6px;
+            border: 5px solid #78716c; /* Stone 500 */
+            overflow: hidden; /* Crucial for reel effect */
+        }
+
+        .reel {
+            width: 60px;
+            height: 180px; /* Show 3 symbols, each ~60px high */
+            background-color: #e5e7eb; /* Gray 200 */
+            border: 1px solid #9ca3af; /* Gray 400 */
+            border-radius: 4px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow: hidden; /* Hide symbols outside the viewport */
+            position: relative;
+        }
+
+        .reel-symbols { /* This inner div will scroll */
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+             /* transition: top 0.1s linear; Quick blur effect - real animation needs JS interval */
+        }
+
+        .reel-symbol {
+            font-size: 2.5rem;
+            height: 60px;
+            line-height: 60px;
+            text-align: center;
+            width: 100%;
+        }
+
+        #slots-result {
+             margin-top: 10px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            min-height: 1.5em;
+            color: var(--primary-color);
+        }
+
+        /* --- Scratch Card Page --- */
+        .scratch-card-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            padding: 20px;
+            background-color: var(--surface-color);
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+        }
+
+        .scratch-info {
+             font-size: 1.1rem;
+            font-weight: 500;
+            text-align: center;
+        }
+
+        .scratch-card-area {
+            width: 250px;
+            height: 150px;
+            position: relative;
+            border: 2px dashed var(--text-color-medium);
+            border-radius: 6px;
+            cursor: pointer;
+            overflow: hidden; /* Contain overlay and result */
+        }
+
+        .scratch-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #bdc3c7, #a1a8af); /* Silver gradient */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-color-light);
+            font-weight: 600;
+            text-align: center;
+            padding: 10px;
+            z-index: 2;
+            opacity: 1; /* Initially fully visible */
+            transition: opacity 0.5s ease-out; /* Fade out on scratch */
+        }
+         .scratch-overlay.scratched {
+            opacity: 0;
+            pointer-events: none; /* Allow clicking through if needed */
+         }
+
+        .scratch-result {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--success-color);
+            background-color: #f0fdf4; /* Green 50 */
+            z-index: 1;
+            /* Initially hidden by overlay */
+        }
+
+        #scratch-status {
+             margin-top: 10px;
+            font-size: 1.1rem;
+            font-weight: 500;
+            min-height: 1.5em;
+            color: var(--text-color-medium);
+        }
+
+        /* --- Placeholder Pages (Bonus, Refer, Profile, History) --- */
+        .placeholder-page {
+            text-align: center;
+            padding: 40px 20px;
+            background-color: var(--surface-color);
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+        }
+
+        .placeholder-page i.large-icon {
+            font-size: 4rem;
+            color: var(--primary-color-light);
+            margin-bottom: 20px;
+            display: block; /* Ensure it takes space */
+        }
+
+        .placeholder-page h2 {
+             font-size: 1.8rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+        .placeholder-page p {
+             font-size: 1.1rem;
+            color: var(--text-color-medium);
+            margin-bottom: 20px;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .placeholder-page .status-message {
+             margin-top: 15px;
+            font-weight: 500;
+            min-height: 1.2em;
+        }
+
+        /* Daily Bonus Specific */
+        #daily-bonus-message { margin-bottom: 20px; font-size: 1.1rem;}
+        #daily-bonus-status { color: var(--primary-color); }
+
+        /* Refer & Earn Specific */
+        .referral-code {
+            display: inline-block;
+            background-color: var(--background-color);
+            border: 1px dashed var(--primary-color);
+            padding: 10px 20px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin: 10px 0 20px 0;
+            color: var(--primary-color-dark);
+            user-select: all; /* Allow easy selection */
+        }
+        #copy-status { color: var(--success-color); }
+        .referral-note { font-size: 0.9rem; color: var(--text-color-medium); margin-top: 10px; }
+
+         /* Redeem Points Specific */
+         #redeem-points-balance {
+             font-size: 1.2rem;
+             font-weight: 600;
+             margin-bottom: 20px;
+             text-align: center;
+             color: var(--primary-color);
+         }
+         #withdraw-form {
+             max-width: 450px;
+             margin: 0 auto;
+             display: flex;
+             flex-direction: column;
+             gap: 15px;
+         }
+         .withdraw-warning {
+             font-size: 0.85rem;
+             color: var(--error-color);
+             font-weight: 500;
+             margin-top: -5px;
+         }
+
+        /* History Specific */
+        #full-activity-list {
+            margin-top: 20px;
+        }
+
+        /* Profile Specific */
+        .profile-info {
+            margin-bottom: 20px;
+            font-size: 1.1rem;
+        }
+        .profile-info strong {
+            color: var(--text-color-medium);
+            margin-right: 8px;
+        }
+
+        /* --- Common UI Elements --- */
+        .error-message, .success-message {
+            padding: 10px 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-weight: 500;
+            display: none; /* Hidden by default */
+            word-wrap: break-word; /* Prevent long errors breaking layout */
+        }
+
+        .error-message {
+            background-color: #fee2e2; /* Red 100 */
+            color: #b91c1c; /* Red 700 */
+            border: 1px solid #fecaca; /* Red 200 */
+        }
+
+        .success-message {
+            background-color: #dcfce7; /* Green 100 */
+            color: #15803d; /* Green 700 */
+            border: 1px solid #bbf7d0; /* Green 200 */
+        }
+
+        .spinner {
+            width: 1em;
+            height: 1em;
+            border: 2px solid currentColor;
+            border-right-color: transparent;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            display: none; /* Hidden by default */
+            margin-left: -2px; /* Adjust alignment when visible */
+            margin-right: 5px;
+        }
+
+        button.loading .spinner {
+            display: inline-block;
+        }
+        button.loading span:not(.spinner) {
+            opacity: 0.7;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .text-center { text-align: center; }
+
+        /* --- Responsive Adjustments --- */
+
+        /* Tablet (>= 768px) */
+        @media (min-width: 768px) {
+            .user-greeting {
+                display: inline; /* Show greeting */
+            }
+
+            .stats-panel {
+                grid-template-columns: repeat(2, 1fr); /* 2 columns */
+            }
+
+             .feature-grid {
+                 grid-template-columns: repeat(2, 1fr); /* 2 columns */
+             }
+        }
+
+        /* Desktop (>= 992px) */
+        @media (min-width: 992px) {
+            .app-container {
+                display: grid;
+                grid-template-columns: var(--sidebar-width-desktop) 1fr;
+                grid-template-rows: var(--header-height) 1fr;
+                grid-template-areas:
+                    "sidebar header"
+                    "sidebar main";
+                min-height: 100vh;
+            }
+
+            .app-header {
+                grid-area: header;
+                position: static; /* No longer fixed */
+                border-bottom: none; /* Border might be handled by main or sidebar */
+                border-left: 1px solid var(--border-color); /* Separator */
+                justify-content: flex-end; /* Align profile to right */
+            }
+
+            #menu-toggle, .app-logo {
+                display: none; /* Hide mobile header elements */
+            }
+
+            .app-sidebar {
+                grid-area: sidebar;
+                position: static; /* No longer fixed */
+                transform: translateX(0); /* Always visible */
+                width: var(--sidebar-width-desktop);
+                padding-top: 20px; /* Adjust padding */
+                box-shadow: none;
+                border-right: 1px solid var(--border-color);
+            }
+
+            .sidebar-overlay {
+                display: none !important; /* Never show overlay on desktop */
+            }
+
+            .app-main {
+                grid-area: main;
+                padding: 20px 30px; /* Adjust padding */
+                margin-left: 0; /* No margin needed */
+                overflow-y: auto; /* Allow main content to scroll if needed */
+                height: calc(100vh - var(--header-height));
+            }
+
+             .feature-grid {
+                 grid-template-columns: repeat(2, 1fr); /* Keep 2 columns or adjust if needed */
+             }
+        }
+
+         /* Larger Desktop (>= 1200px) */
+        @media (min-width: 1200px) {
+            .stats-panel {
+                grid-template-columns: repeat(4, 1fr); /* 4 columns */
+            }
+             .feature-grid {
+                 grid-template-columns: repeat(4, 1fr); /* 4 columns */
+             }
+        }
+
+         /* Ad Area Styling - added for banner placement */
+         .banner-ad-area {
+             text-align: center; /* Center the ad iframe/content */
+             margin: 20px 0; /* Add spacing above/below the ad */
+         }
+          .header-banner-ad-area {
+              margin-bottom: 20px; /* Specific spacing for header area */
+          }
+          .bottom-banner-ad-area {
+               margin-top: 20px; /* Specific spacing for bottom area */
+          }
+
+
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-left">
+                <button id="menu-toggle" aria-label="Toggle Menu">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+            <h1 class="app-logo">SpinEarn</h1>
+            <div class="header-right">
+                <div class="user-profile">
+                    <i class="fas fa-user-circle"></i>
+                    <span class="user-greeting" id="user-greeting-text">Hi, Guest!</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Sidebar -->
+        <aside class="app-sidebar" id="app-sidebar">
+            <nav class="sidebar-nav">
+                <ul>
+                    <!-- Logged Out Links -->
+                    <li class="logged-out-link"><a href="#login" data-page="login-content"><i class="fas fa-sign-in-alt"></i><span>Login</span></a></li>
+                    <li class="logged-out-link"><a href="#register" data-page="register-content"><i class="fas fa-user-plus"></i><span>Register</span></a></li>
+
+                    <!-- Logged In Links -->
+                    <li class="logged-in-link hidden"><a href="#dashboard" data-page="dashboard-content" class="active"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span></a></li>
+                    <li class="logged-in-link hidden"><a href="#spin-wheel" data-page="spin-wheel-content"><i class="fas fa-dharmachakra"></i><span>Spin Wheel</span></a></li>
+                    <li class="logged-in-link hidden"><a href="#slot-machine" data-page="slot-machine-content"><i class="fas fa-dice-three"></i><span>Slot Machine</span></a></li>
+                    <li class="logged-in-link hidden"><a href="#scratch-cards" data-page="scratch-cards-content"><i class="fas fa-clone"></i><span>Scratch Cards</span></a></li>
+                    <li class="logged-in-link hidden"><a href="#daily-bonus" data-page="daily-bonus-content"><i class="fas fa-calendar-check"></i><span>Daily Bonus</span></a></li>
+                    <li class="logged-in-link hidden"><a href="#refer-earn" data-page="refer-earn-content"><i class="fas fa-user-plus"></i><span>Refer & Earn</span></a></li>
+                    <li class="logged-in-link hidden"><a href="#redeem" data-page="redeem-content"><i class="fas fa-gift"></i><span>Redeem Points</span></a></li>
+                    <li class="logged-in-link hidden"><a href="#history" data-page="history-content"><i class="fas fa-history"></i><span>History</span></a></li>
+                    <li class="logged-in-link hidden"><a href="#profile" data-page="profile-content"><i class="fas fa-user-cog"></i><span>Profile</span></a></li>
+                    <li class="logged-in-link hidden logout-link"><a href="#logout" id="logout-button"><i class="fas fa-sign-out-alt"></i><span>Logout</span></a></li>
+                </ul>
+            </nav>
+        </aside>
+        <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+        <!-- Main Content Area -->
+        <main class="app-main" id="app-main">
+            <div id="page-content-wrapper">
+
+                <!-- Header Banner Ad Area - Added -->
+                <div class="banner-ad-area header-banner-ad-area">
+                     <script type="text/javascript">
+                         atOptions = {
+                             'key' : 'e9fbcf79548bb462448ba5480b9818b6',
+                             'format' : 'iframe',
+                             'height' : 90,
+                             'width' : 728,
+                             'params' : {}
+                         };
+                     </script>
+                     <script type="text/javascript" src="//www.highperformanceformat.com/e9fbcf79548bb462448ba5480b9818b6/invoke.js"></script>
+                </div>
+                <!-- End Header Banner Ad Area -->
+
+
+                <!-- Login Page -->
+                <div id="login-content" class="page-content auth-page card">
+                    <h2>Login</h2>
+                    <form id="login-form">
+                        <div class="form-group">
+                            <!-- IMPORTANT: Changed to Email -->
+                            <label for="login-email">Email</label>
+                            <input type="email" id="login-email" name="email" required autocomplete="email">
+                        </div>
+                        <div class="form-group">
+                            <label for="login-password">Password</label>
+                            <input type="password" id="login-password" name="password" required autocomplete="current-password">
+                        </div>
+                         <div id="login-error-message" class="error-message"></div>
+                        <button type="submit" class="btn-primary" id="login-submit-btn">
+                             <span class="spinner"></span>
+                             <span>Login</span>
+                        </button>
+                    </form>
+                    <p class="form-link">Don't have an account? <a href="#register" data-page="register-content" class="nav-link">Register here</a></p>
+                </div>
+
+                <!-- Register Page -->
+                <div id="register-content" class="page-content auth-page card">
+                     <h2>Register</h2>
+                     <form id="register-form">
+                        <div class="form-group">
+                             <!-- IMPORTANT: Changed to Email -->
+                             <label for="register-email">Email</label>
+                             <input type="email" id="register-email" name="email" required autocomplete="email">
+                        </div>
+                         <div class="form-group">
+                             <label for="register-password">Password</label>
+                             <input type="password" id="register-password" name="password" required minlength="6" autocomplete="new-password">
+                             <p class="input-hint">Min 6 characters.</p>
+                        </div>
+                         <div class="form-group">
+                             <label for="register-confirm-password">Confirm Password</label>
+                             <input type="password" id="register-confirm-password" name="confirm_password" required autocomplete="new-password">
+                        </div>
+                         <div id="register-error-message" class="error-message"></div>
+                         <div id="register-success-message" class="success-message"></div>
+                         <button type="submit" class="btn-primary" id="register-submit-btn">
+                             <span class="spinner"></span>
+                             <span>Register</span>
+                         </button>
+                     </form>
+                     <p class="form-link">Already have an account? <a href="#login" data-page="login-content" class="nav-link">Login here</a></p>
+                 </div>
+
+                <!-- Dashboard Page -->
+                <div id="dashboard-content" class="page-content">
+                    <h2 class="page-title">Dashboard</h2>
+                    <p class="welcome-message" id="welcome-user-message">Welcome Back, Guest!</p>
+
+                    <!-- Stats Panel -->
+                    <div class="stats-panel">
+                        <div class="stat-card">
+                            <div class="icon-wrapper bg-blue"><i class="fas fa-coins"></i></div>
+                            <div class="stat-info">
+                                <div class="label">Balance</div>
+                                <div class="value" id="dashboard-balance">--- pts</div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="icon-wrapper bg-green"><i class="fas fa-dharmachakra"></i></div>
+                            <div class="stat-info">
+                                <div class="label">Spins Left</div>
+                                <div class="value" id="dashboard-spins">---</div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="icon-wrapper bg-red"><i class="fas fa-dice-three"></i></div>
+                            <div class="stat-info">
+                                <div class="label">Slot Tokens</div>
+                                <div class="value" id="dashboard-tokens">---</div>
+                            </div>
+                        </div>
+                         <div class="stat-card">
+                             <div class="icon-wrapper bg-yellow"><i class="fas fa-clone"></i></div>
+                             <div class="stat-info">
+                                 <div class="label">Scratch Cards</div>
+                                 <div class="value" id="dashboard-scratch-cards">---</div>
+                             </div>
+                         </div>
+                    </div>
+
+                    <!-- Spin Action -->
+                    <div class="card spin-action-card">
+                        <p>Ready for your next chance to win big?</p>
+                        <button class="btn-success nav-link" data-page="spin-wheel-content">
+                            <i class="fas fa-dharmachakra"></i> Go to Spin Wheel
+                        </button>
+                    </div>
+
+                    <!-- Feature Grid -->
+                    <div class="feature-grid">
+                        <div class="feature-card">
+                            <div class="icon-wrapper-sq bg-green"><i class="fas fa-calendar-check"></i></div>
+                            <div class="title">Daily Bonus</div>
+                            <div class="description">Claim your free bonus points every day!</div>
+                            <button class="btn-primary nav-link" data-page="daily-bonus-content">Claim Now</button>
+                        </div>
+                         <div class="feature-card">
+                            <div class="icon-wrapper-sq bg-red"><i class="fas fa-dice-three"></i></div>
+                            <div class="title">Slot Machine</div>
+                            <div class="description">Test your luck on the virtual slots.</div>
+                            <button class="btn-primary nav-link" data-page="slot-machine-content">Play Slots</button>
+                        </div>
+                         <div class="feature-card">
+                             <div class="icon-wrapper-sq bg-yellow"><i class="fas fa-clone"></i></div>
+                             <div class="title">Scratch Cards</div>
+                             <div class="description">Scratch off the card to reveal hidden prizes.</div>
+                             <button class="btn-primary nav-link" data-page="scratch-cards-content">Scratch Now</button>
+                         </div>
+                         <div class="feature-card">
+                            <div class="icon-wrapper-sq bg-purple"><i class="fas fa-user-plus"></i></div>
+                            <div class="title">Refer & Earn</div>
+                            <div class="description">Invite friends and earn bonus points together.</div>
+                            <button class="btn-primary nav-link" data-page="refer-earn-content">Refer Friends</button>
+                        </div>
+                        <div class="feature-card">
+                            <div class="icon-wrapper-sq bg-pink"><i class="fas fa-gift"></i></div>
+                            <div class="title">Redeem Points</div>
+                            <div class="description">Convert your earned points into rewards (Simulation).</div>
+                            <button class="btn-primary nav-link" data-page="redeem-content">Redeem Now</button>
+                        </div>
+                         <div class="feature-card">
+                            <div class="icon-wrapper-sq bg-teal"><i class="fas fa-history"></i></div>
+                            <div class="title">Activity History</div>
+                            <div class="description">See all your recent earnings and activities.</div>
+                            <button class="btn-primary nav-link" data-page="history-content">View History</button>
+                        </div>
+                         <div class="feature-card">
+                            <div class="icon-wrapper-sq bg-orange"><i class="fas fa-user-cog"></i></div>
+                            <div class="title">Your Profile</div>
+                            <div class="description">View your account details.</div>
+                            <button class="btn-primary nav-link" data-page="profile-content">View Profile</button>
+                        </div>
+                    </div>
+
+                    <!-- Activity Log -->
+                    <div class="activity-log card">
+                         <h3>Recent Activity</h3>
+                         <ul class="activity-list" id="dashboard-activity-list">
+                             <li>Loading recent activity...</li>
+                         </ul>
+                         <a href="#history" class="view-all-activity nav-link" data-page="history-content">View All Activity <i class="fas fa-arrow-right fa-xs"></i></a>
+                    </div>
+                </div>
+
+                 <!-- Spin Wheel Page -->
+                <div id="spin-wheel-content" class="page-content">
+                    <h2 class="page-title">Spin the Wheel!(SORRY FOR DESIGN WE WILL BE SOLVE THIS PROBLEM AS SOON AS POSSIBLE.)</h2>
+                    <div class="spin-wheel-container card">
+                        <div class="wheel-pointer"></div>
+                        <div class="wheel" id="spin-wheel-visual">
+                            <!-- Segments generated by JS -->
+                        </div>
+                        <div class="wheel-center"></div>
+                        <div class="spin-info">Spins Left: <span id="spin-wheel-spins-left">---</span></div>
+                         <button class="btn-success" id="spin-now-btn">
+                             <span class="spinner"></span>
+                             <i class="fas fa-play"></i> <span>Spin Now</span>
+                         </button>
+                         <div id="spin-result">Ready to spin!</div>
+                    </div>
+                 </div>
+
+                 <!-- Slot Machine Page -->
+                <div id="slot-machine-content" class="page-content">
+                    <h2 class="page-title">Slot Machine</h2>
+                     <div class="slots-container card">
+                        <div class="slots-info">Cost: 1 Token | Your Tokens: <span id="slot-machine-tokens">---</span></div>
+                        <div class="slots-reels">
+                            <div class="reel" id="reel1"><div class="reel-symbols"><!-- Symbols added by JS --></div></div>
+                            <div class="reel" id="reel2"><div class="reel-symbols"><!-- Symbols added by JS --></div></div>
+                            <div class="reel" id="reel3"><div class="reel-symbols"><!-- Symbols added by JS --></div></div>
+                        </div>
+                        <button class="btn-danger" id="play-slots-btn">
+                            <span class="spinner"></span>
+                             <i class="fas fa-play"></i> <span>Play (1 Token)</span>
+                         </button>
+                        <div id="slots-result">Pull the lever! (Click Play)</div>
+                    </div>
+                 </div>
+
+                <!-- Scratch Cards Page -->
+                <div id="scratch-cards-content" class="page-content">
+                    <h2 class="page-title">Scratch & Win</h2>
+                     <div class="scratch-card-container card">
+                         <div class="scratch-info">Cards Left Today: <span id="scratch-cards-left">---</span></div>
+                         <div class="scratch-card-area" id="scratch-card-area">
+                             <div class="scratch-result" id="scratch-card-result">? Pts</div>
+                             <div class="scratch-overlay" id="scratch-card-overlay">Click or Tap to Scratch!</div>
+                             <!-- Could use Canvas here for real scratching -->
+                         </div>
+                         <button class="btn-warning" id="scratch-now-btn">
+                             <span class="spinner"></span>
+                             <i class="fas fa-hand-pointer"></i> <span>Scratch Card</span>
+                         </button>
+                         <div id="scratch-status">Click the button or card above!</div>
+                     </div>
+                 </div>
+
+                <!-- Daily Bonus Page -->
+                <div id="daily-bonus-content" class="page-content placeholder-page">
+                    <i class="fas fa-calendar-check large-icon"></i>
+                    <h2>Daily Bonus</h2>
+                    <p id="daily-bonus-message">Check your eligibility for today's bonus!</p>
+                    <button class="btn-success" id="claim-bonus-btn">
+                        <span class="spinner"></span>
+                        <i class="fas fa-gift"></i> <span>Claim Today's Bonus</span>
+                    </button>
+                    <div id="daily-bonus-status" class="status-message"></div>
+                </div>
+
+                <!-- Refer & Earn Page -->
+                <div id="refer-earn-content" class="page-content placeholder-page">
+                    <i class="fas fa-user-plus large-icon"></i>
+                    <h2>Refer & Earn</h2>
+                    <p>Share your referral code with friends. When they sign up and play, you both earn bonus points! </p>
+                    <div>Your Referral Code:</div>
+                    <div class="referral-code" id="referral-code">LOADING...</div>
+                    <button class="btn-primary" id="copy-code-btn">
+                        <i class="fas fa-copy"></i> <span>Copy Code</span>
+                    </button>
+                    <div id="copy-status" class="status-message"></div>
+                     <p class="referral-note"></p>
+                </div>
+
+                 <!-- Redeem Points Page -->
+                <div id="redeem-content" class="page-content">
+                    <h2 class="page-title text-center">Redeem Points </h2>
+                     <div class="card">
+                        <div id="redeem-points-balance">Your Balance: --- points</div>
+                        <form id="withdraw-form">
+                            <p class="text-center" style="margin-bottom: 15px; color: var(--text-color-medium);">Request a withdrawal. Minimum 2000 points.(2000 Points = 0.20$) Contact: alfayedmir0@gmail.com</p>
+                            <div class="form-group">
+                                <label for="withdraw-amount">Amount (Points)</label>
+                                <input type="number" id="withdraw-amount" name="amount" required min="2000" step="100" placeholder="e.g., 2500">
+                            </div>
+                            <div class="form-group">
+                                <label for="withdraw-method">Withdrawal Method</label>
+                                <select id="withdraw-method" name="method" required>
+                                    <option value="">-- Select Method --</option>
+                                    <option value="paypal">PayPal </option>
+                                    <option value="bank">Bank Transfer </option>
+                                    <option value="voucher">Gift Voucher </option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="withdraw-details">Details (e.g., Email / Account)</label>
+                                <input type="text" id="withdraw-details" name="details" required placeholder="Enter details ">
+                                <p class="withdraw-warning"></p>
+                            </div>
+                             <div id="withdraw-error-message" class="error-message"></div>
+                             <div id="withdraw-success-message" class="success-message"></div>
+                            <button type="submit" class="btn-primary" id="withdraw-submit-btn">
+                                <span class="spinner"></span>
+                                <i class="fas fa-paper-plane"></i> <span>Request Withdrawal</span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- History Page -->
+                <div id="history-content" class="page-content placeholder-page">
+                     <i class="fas fa-history large-icon"></i>
+                    <h2>Activity History</h2>
+                    <p>Here's a log of all your earnings and game plays.</p>
+                    <div class="card" style="text-align: left;">
+                         <ul class="activity-list" id="full-activity-list">
+                              <li>Loading history...</li>
+                         </ul>
+                    </div>
+                 </div>
+
+                <!-- Profile Page -->
+                <div id="profile-content" class="page-content placeholder-page">
+                    <i class="fas fa-user-edit large-icon"></i>
+                    <h2>Profile</h2>
+                     <div class="profile-info"><strong>Email:</strong> <span id="profile-email">---</span></div>
+                     <div class="profile-info"><strong>Username:</strong> <span id="profile-username">---</span></div>
+                     <div class="profile-info"><strong>Member Since:</strong> <span id="profile-member-since">---</span></div>
+                     <button class="btn-primary" disabled title="Feature not implemented">
+                         <i class="fas fa-key"></i> Change Password (Not functional)
+                     </button>
+                 </div>
+
+                 <!-- Bottom Banner Ad Area - Added -->
+                  <div class="banner-ad-area bottom-banner-ad-area">
+                      <script type="text/javascript">
+                          atOptions = {
+                              'key' : 'e9fbcf79548bb462448ba5480b9818b6',
+                              'format' : 'iframe',
+                              'height' : 90,
+                              'width' : 728,
+                              'params' : {}
+                          };
+                      </script>
+                      <script type="text/javascript" src="//www.highperformanceformat.com/e9fbcf79548bb462448ba5480b9818b6/invoke.js"></script>
+                  </div>
+                  <!-- End Bottom Banner Ad Area -->
+
+
+            </div> <!-- End #page-content-wrapper -->
+        </main>
+
+    </div> <!-- End .app-container -->
+
+    <!-- Popunder Ad Script - Added -->
+    <script type='text/javascript' src='//pl26549628.profitableratecpm.com/ed/94/87/ed9487218aeac99674c8716bdcf165d6.js'></script>
+    <!-- End Popunder Ad Script -->
+
+
+    <script>
+        // Initialize Firebase
+        const firebaseConfig = {
+          apiKey: "AIzaSyDrWMZgPvox7KcQes-178O7k0jiTaO_MKg", // Use the key you provided
+          authDomain: "earnmoneyfree-ea92d.firebaseapp.com",
+          projectId: "earnmoneyfree-ea92d",
+          storageBucket: "earnmoneyfree-ea92d.appspot.com",
+          messagingSenderId: "55937358056",
+          appId: "1:55937358056:web:f0148fe2d29286fd6c115d",
+          measurementId: "G-BGN4WM5QXN" // Optional
+        };
+        firebase.initializeApp(firebaseConfig);
+
+        // Get references to Firebase services
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+        // const functions = firebase.functions(); // Uncomment if using Cloud Functions
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- Firebase State Variables ---
+            let currentUser = null; // Firebase auth user object (from auth.currentUser or onAuthStateChanged)
+            let userData = null;    // Firestore user data object fetched based on currentUser.uid
+            let unsubscribeUserData = null; // Function to stop listening to user data changes
+            let unsubscribeActivityLog = null; // Function to stop listening to activity log changes
+
+            // --- Game Config (Same as before) ---
+             const spinWheelSegments = [
+                { label: '10 Pts', value: 10, color: '#fde047' }, // yellow-300
+                { label: 'Try Again', value: 0, color: '#d1d5db' }, // gray-300
+                { label: '50 Pts', value: 50, color: '#86efac' }, // green-300
+                { label: '5 Pts', value: 5, color: '#fde047' },
+                { label: 'Bonus Spin', value: 'bonus_spin', color: '#fca5a5' }, // red-300
+                { label: '20 Pts', value: 20, color: '#93c5fd' }, // blue-300
+                { label: 'Try Again', value: 0, color: '#d1d5db' },
+                { label: '100 Pts', value: 100, color: '#f59e0b' }, // amber-500
+            ];
+            const slotSymbols = ['🍒', '🍋', '🍊', '🍉', '⭐', '７', '🔔']; // 7 symbols
+            const scratchCardPrizes = [
+                { label: "No Win", value: 0, chance: 40 },
+                { label: "5 Pts", value: 5, chance: 30 },
+                { label: "10 Pts", value: 10, chance: 15 },
+                { label: "25 Pts", value: 25, chance: 10 },
+                { label: "50 Pts", value: 50, chance: 5 },
+            ];
+             // Define daily starting values
+             const DAILY_STARTING_SPINS = 5;
+             const DAILY_STARTING_SCRATCHCARDS = 3;
+             const DAILY_STARTING_TOKENS = 10; // Example if tokens are also daily
+
+            // --- Game State ---
+            let isSpinning = false;
+            let isSlotSpinning = false;
+            let isScratching = false;
+
+            // --- DOM Element References (Same as before) ---
+             const appContainer = document.querySelector('.app-container');
+            const header = document.querySelector('.app-header');
+            const menuToggle = document.getElementById('menu-toggle');
+            const sidebar = document.getElementById('app-sidebar');
+            const sidebarOverlay = document.getElementById('sidebar-overlay');
+            const sidebarLinks = sidebar.querySelectorAll('.sidebar-nav a');
+            const pageContentWrapper = document.getElementById('page-content-wrapper');
+            const allPages = pageContentWrapper.querySelectorAll('.page-content');
+            const loggedOutLinks = sidebar.querySelectorAll('.logged-out-link');
+            const loggedInLinks = sidebar.querySelectorAll('.logged-in-link');
+            const userGreetingText = document.getElementById('user-greeting-text');
+            const loginForm = document.getElementById('login-form');
+            const registerForm = document.getElementById('register-form');
+            const loginErrorMsg = document.getElementById('login-error-message');
+            const registerErrorMsg = document.getElementById('register-error-message');
+            const registerSuccessMsg = document.getElementById('register-success-message');
+            const loginSubmitBtn = document.getElementById('login-submit-btn');
+            const registerSubmitBtn = document.getElementById('register-submit-btn');
+            const welcomeUserMsg = document.getElementById('welcome-user-message');
+            const dashboardBalance = document.getElementById('dashboard-balance');
+            const dashboardSpins = document.getElementById('dashboard-spins');
+            const dashboardTokens = document.getElementById('dashboard-tokens');
+            const dashboardScratchCards = document.getElementById('dashboard-scratch-cards');
+            const dashboardActivityList = document.getElementById('dashboard-activity-list');
+            const spinWheelVisual = document.getElementById('spin-wheel-visual');
+            const spinNowBtn = document.getElementById('spin-now-btn');
+            const spinResultText = document.getElementById('spin-result');
+            const spinWheelSpinsLeft = document.getElementById('spin-wheel-spins-left');
+            const playSlotsBtn = document.getElementById('play-slots-btn');
+            const slotsResultText = document.getElementById('slots-result');
+            const slotMachineTokens = document.getElementById('slot-machine-tokens');
+            const reels = [document.getElementById('reel1'), document.getElementById('reel2'), document.getElementById('reel3')];
+            const reelSymbolContainers = reels.map(r => r.querySelector('.reel-symbols'));
+            const scratchNowBtn = document.getElementById('scratch-now-btn');
+            const scratchStatusText = document.getElementById('scratch-status');
+            const scratchCardsLeft = document.getElementById('scratch-cards-left');
+            const scratchCardArea = document.getElementById('scratch-card-area');
+            const scratchCardOverlay = document.getElementById('scratch-card-overlay');
+            const scratchCardResult = document.getElementById('scratch-card-result');
+            const claimBonusBtn = document.getElementById('claim-bonus-btn');
+            const dailyBonusMsg = document.getElementById('daily-bonus-message');
+            const dailyBonusStatus = document.getElementById('daily-bonus-status');
+            const referralCodeEl = document.getElementById('referral-code');
+            const copyCodeBtn = document.getElementById('copy-code-btn');
+            const copyStatusMsg = document.getElementById('copy-status');
+            const redeemBalance = document.getElementById('redeem-points-balance');
+            const withdrawForm = document.getElementById('withdraw-form');
+            const withdrawAmount = document.getElementById('withdraw-amount');
+            const withdrawErrorMsg = document.getElementById('withdraw-error-message');
+            const withdrawSuccessMsg = document.getElementById('withdraw-success-message');
+            const withdrawSubmitBtn = document.getElementById('withdraw-submit-btn');
+            const fullActivityList = document.getElementById('full-activity-list');
+            const profileEmail = document.getElementById('profile-email'); // Added email display
+            const profileUsername = document.getElementById('profile-username');
+            const profileMemberSince = document.getElementById('profile-member-since');
+
+
+            // --- Utility Functions (Mostly same as before) ---
+            const showElement = (el) => el && el.style.display !== 'none' && el.classList.remove('hidden');
+            const hideElement = (el) => el && el.classList.add('hidden');
+            const showMessage = (el, message, isError = true) => {
+                if (!el) return;
+                el.textContent = message;
+                el.className = isError ? 'error-message' : 'success-message';
+                 showElement(el);
+                 // Auto-hide success messages after a delay
+                 if (!isError) {
+                     setTimeout(() => hideMessage(el), 4000);
+                 }
+            };
+             const hideMessage = (el) => {
+                if (!el) return;
+                el.textContent = '';
+                 hideElement(el);
+            };
+             const setButtonLoading = (btn, isLoading) => {
+                if (!btn) return;
+                const spinner = btn.querySelector('.spinner');
+                const textSpan = btn.querySelector('span:not(.spinner)'); // Find text span
+
+                if (isLoading) {
+                    btn.disabled = true;
+                    btn.classList.add('loading');
+                    if(spinner) spinner.style.display = 'inline-block'; // Use style for inline-block
+                    if(textSpan) textSpan.style.opacity = '0.7';
+                } else {
+                    btn.disabled = false;
+                    btn.classList.remove('loading');
+                    if(spinner) spinner.style.display = 'none'; // Use style
+                    if(textSpan) textSpan.style.opacity = '1';
+                }
+            };
+             const formatNumber = (num) => (typeof num === 'number') ? num.toLocaleString() : '0';
+             const timeAgo = (timestamp) => {
+                if (!timestamp) return 'Calculating...'; // Handle null timestamps
+                 const now = new Date();
+                 // Ensure timestamp is a Date object (Firestore Timestamps have .toDate())
+                 const past = timestamp instanceof Date ? timestamp : timestamp.toDate();
+                 const diffInSeconds = Math.floor((now - past) / 1000);
+                 const diffInMinutes = Math.floor(diffInSeconds / 60);
+                 const diffInHours = Math.floor(diffInMinutes / 60);
+                 const diffInDays = Math.floor(diffInHours / 24);
+
+                 if (diffInSeconds < 60) return `${diffInSeconds} sec ago`;
+                 if (diffInMinutes < 60) return `${diffInMinutes} min ago`;
+                 if (diffInHours < 24) return `${diffInHours} hr ago`;
+                 return `${diffInDays} day${diffInDays > 1 ? 's' : ''} ago`;
+             };
+
+             // --- Firestore Interaction Functions ---
+
+             // Create User Document on Registration
+            const createUserData = (uid, email) => {
+                const newUserRef = db.collection('users').doc(uid);
+                const joinTimestamp = firebase.firestore.FieldValue.serverTimestamp();
+                 const username = email.split('@')[0]; // Default username
+                const referralCode = `${username.substring(0, 8).toUpperCase()}${Math.random().toString(36).substring(2, 7).toUpperCase()}`; // Generate random code
+
+                return newUserRef.set({ // Return the promise
+                    email: email,
+                    username: username,
+                    joinedAt: joinTimestamp,
+                    points: 50, // Starting points bonus
+                    spins: DAILY_STARTING_SPINS,
+                    tokens: DAILY_STARTING_TOKENS,
+                    scratchCards: DAILY_STARTING_SCRATCHCARDS,
+                    dailyBonusClaimed: false,
+                    lastBonusClaimDate: null,
+                    referralCode: referralCode
+                })
+                .then(() => {
+                    console.log("User document created in Firestore for:", uid);
+                })
+                .catch((error) => {
+                    console.error("Error creating user document: ", error);
+                    // Handle error - crucial for user experience
+                    showMessage(registerErrorMsg, `Account created, but failed to save initial data: ${error.message}`);
+                });
+            };
+
+            // Fetch User Data and Listen for Real-time Updates
+            const fetchUserData = (uid) => {
+                 // Unsubscribe from previous listener if exists
+                 if (unsubscribeUserData) {
+                     unsubscribeUserData();
+                     unsubscribeUserData = null;
+                 }
+
+                const userDocRef = db.collection('users').doc(uid);
+
+                // Use onSnapshot for real-time updates
+                unsubscribeUserData = userDocRef.onSnapshot(async (doc) => { // Make async for potential update
+                    if (doc.exists) {
+                        console.log("User data received/updated:", doc.data());
+                        let currentData = { id: doc.id, ...doc.data() };
+
+                        // --- Daily Reset Logic ---
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0); // Start of today
+                        let needsUpdate = false;
+                        const updates = {};
+
+                         if (currentData.lastBonusClaimDate) {
+                            const lastClaimDate = currentData.lastBonusClaimDate.toDate(); // Convert Firestore Timestamp
+                            lastClaimDate.setHours(0, 0, 0, 0); // Start of last claim day
+
+                            if (today > lastClaimDate) {
+                                console.log("New day detected, resetting daily limits.");
+                                updates.dailyBonusClaimed = false;
+                                if (currentData.spins < DAILY_STARTING_SPINS) updates.spins = DAILY_STARTING_SPINS; // Reset if less than start
+                                if (currentData.scratchCards < DAILY_STARTING_SCRATCHCARDS) updates.scratchCards = DAILY_STARTING_SCRATCHCARDS;
+                                // Add token reset if needed: if (currentData.tokens < DAILY_STARTING_TOKENS) updates.tokens = DAILY_STARTING_TOKENS;
+                                needsUpdate = true;
+                            }
+                         } else if (!currentData.dailyBonusClaimed) {
+                             // If never claimed or explicitly reset, ensure flag is false (might be redundant but safe)
+                             // updates.dailyBonusClaimed = false; // No need to update if already false
+                         }
+
+                         // Perform update if necessary
+                        if (needsUpdate && Object.keys(updates).length > 0) {
+                            try {
+                                console.log("Applying daily reset updates:", updates);
+                                await userDocRef.update(updates); // Wait for update
+                                console.log("Daily limits reset in Firestore.");
+                                // Manually merge updates into local data for immediate UI reflection
+                                // as onSnapshot might not fire again instantly for this same trigger
+                                currentData = { ...currentData, ...updates };
+                            } catch (error) {
+                                console.error("Error resetting daily limits:", error);
+                                // Handle error - maybe log it or inform user if critical
+                            }
+                        }
+
+                        // Store the latest data (original or updated)
+                        userData = currentData;
+
+                        // Update UI with the latest data
+                        updateUI();
+
+                        // Fetch activity log after ensuring user data is loaded/updated
+                        fetchActivityLog(uid, 5, dashboardActivityList);
+                        if (getCurrentPageId() === 'history-content') {
+                             fetchActivityLog(uid, 50, fullActivityList);
+                         }
+
+
+                        // Show default logged-in page if needed
+                        if (!getCurrentPageId() || getCurrentPageId() === 'login-content' || getCurrentPageId() === 'register-content') {
+                            showPage('dashboard-content');
+                        }
+
+                    } else {
+                        console.error("No user data found in Firestore for UID:", uid);
+                         // This is problematic - user is authenticated but has no data.
+                         // Maybe try creating it? Or log them out?
+                         showMessage(loginErrorMsg, "User data not found. Please contact support or try logging out and in again.");
+                         handleLogout(); // Log out the user
+                    }
+                }, (error) => {
+                     console.error("Error fetching user data (onSnapshot):", error);
+                     showMessage(loginErrorMsg, `Error loading user data: ${error.message}. Please refresh.`);
+                     // Consider logging out the user if data can't be fetched
+                     // handleLogout();
+                });
+            };
+
+            // Add Activity Log Entry
+            const addActivityLog = (icon, iconBg, description, uid) => {
+                if (!uid) {
+                     console.error("Cannot add activity log: No user ID provided.");
+                     return;
+                }
+                const logData = {
+                    icon: icon,
+                    iconBg: iconBg,
+                    description: description,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp() // Use server time
+                };
+                // Don't return promise here, just log errors
+                db.collection('users').doc(uid).collection('activityLog').add(logData)
+                    .then(docRef => console.log("Activity logged with ID:", docRef.id))
+                    .catch(error => console.error("Error logging activity:", error));
+            };
+
+
+            // Fetch Activity Log Entries
+            const fetchActivityLog = (uid, limit = 5, targetListElement = dashboardActivityList) => {
+                if (!uid) {
+                    targetListElement.innerHTML = '<li>Login to view activity.</li>';
+                    return;
+                }
+
+                 // Unsubscribe from previous listener if exists for this specific list
+                 if (targetListElement === dashboardActivityList && unsubscribeActivityLog) {
+                     unsubscribeActivityLog();
+                     unsubscribeActivityLog = null;
+                 }
+                 // Add similar logic if handling unsubscribe for fullActivityList separately needed
+
+                 const logQuery = db.collection('users').doc(uid).collection('activityLog')
+                    .orderBy('timestamp', 'desc')
+                    .limit(limit);
+
+                const unsubscribe = logQuery.onSnapshot(snapshot => {
+                    targetListElement.innerHTML = ''; // Clear list
+                    if (snapshot.empty) {
+                        targetListElement.innerHTML = '<li>No activity recorded yet.</li>';
+                        return;
+                    }
+                    snapshot.forEach(doc => {
+                        const activity = doc.data();
+                        const li = document.createElement('li');
+                        // Ensure timestamp exists before formatting
+                        const timeText = activity.timestamp ? timeAgo(activity.timestamp) : 'Just now';
+                        li.innerHTML = `
+                            <div class="icon-wrapper ${activity.iconBg || 'bg-blue'}"><i class="${activity.icon || 'fas fa-info-circle'}"></i></div>
+                            <div class="activity-details">
+                                <div class="description">${activity.description || 'Activity occurred'}</div>
+                                <div class="timestamp">${timeText}</div>
+                            </div>
+                        `;
+                        targetListElement.appendChild(li);
+                    });
+                }, error => {
+                    console.error(`Error fetching activity log for ${targetListElement.id}:`, error);
+                    targetListElement.innerHTML = '<li>Error loading activity.</li>';
+                });
+
+                 // Store the unsubscribe function for this listener
+                 if (targetListElement === dashboardActivityList) {
+                     unsubscribeActivityLog = unsubscribe;
+                 }
+                 // Handle unsubscribe for full list if needed
+            };
+
+
+             // --- Core Application Logic ---
+
+            const updateUI = () => {
+                // Check currentUser for basic login status and email/uid
+                // Check userData for points, spins, tokens etc.
+                 const userIsLoggedIn = !!(currentUser && userData);
+
+                if (userIsLoggedIn) {
+                    // Logged In State
+                    loggedOutLinks.forEach(hideElement);
+                    loggedInLinks.forEach(showElement);
+                    // Use stored username or fallback to email part
+                    const displayName = userData.username || (currentUser.email ? currentUser.email.split('@')[0] : 'User');
+                    userGreetingText.textContent = `Hi, ${displayName}!`;
+                    welcomeUserMsg.textContent = `Welcome Back, ${displayName}!`;
+
+                    // Update Dashboard Stats from userData
+                    dashboardBalance.textContent = `${formatNumber(userData.points)} pts`;
+                    dashboardSpins.textContent = userData.spins ?? '0'; // Handle potential undefined
+                    dashboardTokens.textContent = userData.tokens ?? '0';
+                    dashboardScratchCards.textContent = userData.scratchCards ?? '0';
+
+                    // Update Game Pages Info from userData
+                    spinWheelSpinsLeft.textContent = userData.spins ?? '0';
+                    slotMachineTokens.textContent = userData.tokens ?? '0';
+                    scratchCardsLeft.textContent = userData.scratchCards ?? '0';
+
+                    // Update Redeem Page Balance
+                    redeemBalance.textContent = `Your Balance: ${formatNumber(userData.points)} points`;
+                     withdrawAmount.max = userData.points ?? 0; // Set max withdrawable amount
+
+                    // Update Profile Page
+                     profileEmail.textContent = currentUser.email || 'N/A';
+                     profileUsername.textContent = userData.username || '(Not Set)';
+                     profileMemberSince.textContent = userData.joinedAt ? userData.joinedAt.toDate().toLocaleDateString() : 'N/A';
+
+                    // Update Daily Bonus Button State
+                     updateDailyBonusButton(); // Uses userData
+
+                    // Update Referral Code
+                    referralCodeEl.textContent = userData.referralCode || 'N/A';
+
+                     // Activity log is fetched separately by onSnapshot listener calling fetchActivityLog
+
+                     // Reset scratch card visual state if needed (e.g., for next day)
+                     if (!isScratching && scratchCardOverlay.classList.contains('scratched')) {
+                         // Only reset if a new day has started (check against bonus claim status)
+                          if (!userData.dailyBonusClaimed) { // Assuming scratch cards reset daily like bonus
+                              resetScratchCardVisual();
+                          }
+                     }
+
+                } else {
+                     // Logged Out State
+                     loggedOutLinks.forEach(showElement);
+                     loggedInLinks.forEach(hideElement);
+                     userGreetingText.textContent = 'Hi, Guest!';
+                     welcomeUserMsg.textContent = 'Welcome, Guest!';
+                     // Reset dashboard/game stats to defaults
+                     dashboardBalance.textContent = `--- pts`;
+                     dashboardSpins.textContent = '---';
+                     dashboardTokens.textContent = '---';
+                     dashboardScratchCards.textContent = '---';
+                     spinWheelSpinsLeft.textContent = '---';
+                     slotMachineTokens.textContent = '---';
+                     scratchCardsLeft.textContent = '---';
+                     redeemBalance.textContent = `Your Balance: --- points`;
+                     profileEmail.textContent = '---';
+                     profileUsername.textContent = '---';
+                     profileMemberSince.textContent = '---';
+                     referralCodeEl.textContent = 'LOGIN TO SEE';
+                     dashboardActivityList.innerHTML = '<li>Login to see activity.</li>';
+                     fullActivityList.innerHTML = '<li>Login to see history.</li>';
+                     resetScratchCardVisual(); // Ensure card is reset visually on logout
+
+                     // Reset game states
+                     isSpinning = false;
+                     isSlotSpinning = false;
+                     isScratching = false;
+                }
+                 // Ensure loading spinners are off on buttons if UI updates happen during loading
+                 setButtonLoading(loginSubmitBtn, false);
+                 setButtonLoading(registerSubmitBtn, false);
+                 // Could add other buttons here if needed
+            };
+
+             const getCurrentPageId = () => {
+                 const activePage = pageContentWrapper.querySelector('.page-content.active');
+                 return activePage ? activePage.id : null;
+             };
+
+            const showPage = (pageId) => {
+                // Prevent navigation during game animations ONLY if user is logged in
+                // Allow navigation away from login/register even if button is loading
+                 if (currentUser && (isSpinning || isSlotSpinning || isScratching)) {
+                     console.log("Navigation blocked during game animation.");
+                     return;
+                 }
+
+                 const targetPage = document.getElementById(pageId);
+                if (!targetPage) {
+                     console.warn(`Page with id "${pageId}" not found. Showing default.`);
+                     pageId = currentUser ? 'dashboard-content' : 'login-content';
+                 }
+
+                allPages.forEach(page => page.classList.remove('active'));
+
+                 // Update active link in sidebar
+                 sidebarLinks.forEach(link => {
+                     link.classList.remove('active');
+                     if (link.getAttribute('data-page') === pageId) {
+                         link.classList.add('active');
+                     }
+                 });
+
+                 const finalTargetPage = document.getElementById(pageId);
+                 if (finalTargetPage) {
+                     finalTargetPage.classList.add('active');
+                 } else {
+                     // Fallback if even default isn't found (shouldn't happen)
+                     document.getElementById('login-content').classList.add('active');
+                 }
+
+                 // If navigating to history, refresh its content if user is logged in
+                 if (pageId === 'history-content' && currentUser) {
+                    fetchActivityLog(currentUser.uid, 50, fullActivityList); // Fetch more for history page
+                 }
+
+                  // Reset specific page states when navigating away or to them
+                  hideMessage(loginErrorMsg);
+                  hideMessage(registerErrorMsg);
+                  hideMessage(registerSuccessMsg);
+                  hideMessage(withdrawErrorMsg);
+                  hideMessage(withdrawSuccessMsg);
+                  spinResultText.textContent = "Ready to spin!";
+                  slotsResultText.textContent = "Pull the lever! (Click Play)";
+                  // Don't reset scratch status here, let daily reset handle visual
+
+                 closeSidebar(); // Close sidebar on mobile after navigation
+            };
+
+            const toggleSidebar = () => {
+                sidebar.classList.toggle('open');
+                sidebarOverlay.classList.toggle('open');
+            };
+
+            const closeSidebar = () => {
+                sidebar.classList.remove('open');
+                sidebarOverlay.classList.remove('open');
+            };
+
+            // --- Authentication Logic ---
+
+            // Listen for auth state changes
+             auth.onAuthStateChanged(user => {
+                setButtonLoading(loginSubmitBtn, false); // Ensure buttons are reset on state change
+                setButtonLoading(registerSubmitBtn, false);
+
+                if (user) {
+                    // User is signed in.
+                    currentUser = user;
+                    console.log("Auth State Changed: User logged in:", currentUser.uid);
+                    // Fetch user data from Firestore (will trigger UI update via onSnapshot)
+                    fetchUserData(currentUser.uid);
+                } else {
+                    // User is signed out.
+                     console.log("Auth State Changed: User logged out");
+                    currentUser = null;
+                    userData = null;
+                     // Unsubscribe from listeners when logged out
+                     if (unsubscribeUserData) unsubscribeUserData();
+                     if (unsubscribeActivityLog) unsubscribeActivityLog();
+                     unsubscribeUserData = null;
+                     unsubscribeActivityLog = null;
+
+                    updateUI(); // Update UI to logged-out state
+                    showPage('login-content'); // Redirect to login
+                }
+            });
+
+
+            const handleLogin = (e) => {
+                 e.preventDefault();
+                 hideMessage(loginErrorMsg);
+                 setButtonLoading(loginSubmitBtn, true);
+                 const email = loginForm.email.value.trim(); // Use email field
+                 const password = loginForm.password.value.trim();
+
+                 auth.signInWithEmailAndPassword(email, password)
+                     .then((userCredential) => {
+                         // Signed in
+                         console.log("Login successful for:", userCredential.user.uid);
+                         // onAuthStateChanged will handle fetching data and UI updates.
+                         loginForm.reset();
+                         // Don't call setButtonLoading false here, onAuthStateChanged handles it
+                     })
+                     .catch((error) => {
+                         console.error("Login Error:", error);
+                         showMessage(loginErrorMsg, `Login failed: ${error.message}`);
+                         setButtonLoading(loginSubmitBtn, false); // Turn off loading on error
+                     });
+            };
+
+            const handleRegister = (e) => {
+                 e.preventDefault();
+                 hideMessage(registerErrorMsg);
+                 hideMessage(registerSuccessMsg);
+                 setButtonLoading(registerSubmitBtn, true);
+
+                 const email = registerForm.email.value.trim(); // Use email field
+                 const password = registerForm.password.value.trim();
+                 const confirmPassword = registerForm.confirm_password.value.trim();
+
+                 // Basic Validation
+                 if (password !== confirmPassword) {
+                      showMessage(registerErrorMsg, 'Passwords do not match.');
+                      setButtonLoading(registerSubmitBtn, false);
+                      return;
+                 }
+                 if (password.length < 6) {
+                     showMessage(registerErrorMsg, 'Password must be at least 6 characters.');
+                     setButtonLoading(registerSubmitBtn, false);
+                     return;
+                 }
+
+                 auth.createUserWithEmailAndPassword(email, password)
+                     .then((userCredential) => {
+                         // Signed in
+                         console.log("Registration successful for:", userCredential.user.uid);
+                         // Create user document in Firestore
+                         // We return the promise from createUserData to ensure it completes
+                         // before showing the final success message or hiding the loader.
+                         return createUserData(userCredential.user.uid, email);
+                     })
+                      .then(() => {
+                          // Firestore document creation successful (or handled its own error)
+                          registerForm.reset();
+                          showMessage(registerSuccessMsg, 'Registration successful! You can now log in.', false);
+                          // Don't need to redirect, user will be logged in via onAuthStateChanged
+                          setButtonLoading(registerSubmitBtn, false);
+                      })
+                     .catch((error) => {
+                         console.error("Registration or Data Creation Error:", error);
+                         // Handle specific errors if possible
+                          if (error.code === 'auth/email-already-in-use') {
+                               showMessage(registerErrorMsg, 'This email address is already registered. Please login.');
+                          } else {
+                              showMessage(registerErrorMsg, `Registration failed: ${error.message}`);
+                          }
+                         setButtonLoading(registerSubmitBtn, false);
+                     });
+            };
+
+
+            const handleLogout = () => {
+                 // Unsubscribe before signing out to prevent errors trying to access logged-out user data
+                 if (unsubscribeUserData) unsubscribeUserData();
+                 if (unsubscribeActivityLog) unsubscribeActivityLog();
+                 unsubscribeUserData = null;
+                 unsubscribeActivityLog = null;
+
+                auth.signOut().then(() => {
+                    // Sign-out successful.
+                    console.log("User initiated logout successful.");
+                    // onAuthStateChanged will handle UI updates and redirection.
+                }).catch((error) => {
+                    console.error("Logout Error:", error);
+                    // Show an error message to the user?
+                    alert(`Logout failed: ${error.message}`);
+                });
+            };
+
+
+             // --- Game Initialisation ---
+            const generateWheelSegments = () => {
+                spinWheelVisual.innerHTML = '';
+                const totalSegments = spinWheelSegments.length;
+                const anglePerSegment = 360 / totalSegments;
+                const skewY = 90 - anglePerSegment;
+
+                spinWheelSegments.forEach((segment, index) => {
+                    const rotation = anglePerSegment * index;
+                    const segmentEl = document.createElement('div');
+                    segmentEl.className = 'wheel-segment';
+                    segmentEl.style.backgroundColor = segment.color;
+                    segmentEl.style.setProperty('--rotation', `${rotation}deg`);
+                    segmentEl.style.setProperty('--skew', `${skewY}deg`);
+                    segmentEl.innerHTML = `<span>${segment.label}</span>`;
+                    spinWheelVisual.appendChild(segmentEl);
+                });
+            };
+
+            const generateSlotSymbols = () => {
+                 reelSymbolContainers.forEach(container => {
+                     container.innerHTML = ''; // Clear first
+                     // Add many symbols to simulate scrolling
+                     const repeats = 5; // How many times to repeat the symbol list for smooth scroll illusion
+                     for (let r = 0; r < repeats; r++) {
+                         // Shuffle symbols for more randomness visually each repeat (optional)
+                         // const shuffledSymbols = [...slotSymbols].sort(() => Math.random() - 0.5);
+                         slotSymbols.forEach(symbol => {
+                             const symbolEl = document.createElement('div');
+                             symbolEl.className = 'reel-symbol';
+                             symbolEl.textContent = symbol;
+                             container.appendChild(symbolEl);
+                         });
+                     }
+                     // Prepend last symbol to top and append first symbol to bottom for wrap-around illusion
+                     const firstSymbol = container.firstChild.cloneNode(true);
+                     const lastSymbol = container.lastChild.cloneNode(true);
+                     container.insertBefore(lastSymbol, container.firstChild);
+                     container.appendChild(firstSymbol);
+
+                     // Set initial position to show middle symbols
+                      const symbolHeight = container.querySelector('.reel-symbol').offsetHeight;
+                      if (symbolHeight > 0) {
+                          container.style.top = `-${symbolHeight * slotSymbols.length * (repeats / 2)}px`; // Start somewhere in the middle repeats
+                      } else {
+                          // Fallback if offsetHeight is 0 initially
+                          setTimeout(() => {
+                              const calculatedHeight = container.querySelector('.reel-symbol')?.offsetHeight || 60;
+                              container.style.top = `-${calculatedHeight * slotSymbols.length * (repeats / 2)}px`;
+                          }, 100);
+                      }
+
+                 });
+             };
+
+
+            // --- Game Logic ---
+
+            // *** IMPORTANT SECURITY NOTE ***
+            // The following game logic functions directly update Firestore from the client.
+            // This is INSECURE for a real application. These should be moved to Cloud Functions.
+
+            const handleSpinWheel = () => {
+                 // Check login, data, game state, and available spins
+                 if (isSpinning || !currentUser || !userData || !(userData.spins > 0)) {
+                      if (currentUser && userData && !(userData.spins > 0)) {
+                          spinResultText.textContent = "No spins left!";
+                          spinResultText.style.color = 'var(--error-color)';
+                      }
+                     return;
+                 }
+
+                isSpinning = true;
+                 // Decrement spins LOCALLY first for immediate UI feedback ( Firestore update will confirm )
+                // userData.spins--; // Avoid direct mutation, let Firestore be source of truth
+                 setButtonLoading(spinNowBtn, true);
+                 spinWheelSpinsLeft.textContent = userData.spins - 1; // Show anticipated value
+                 spinResultText.textContent = 'Spinning...';
+                 spinResultText.style.color = 'var(--primary-color)'; // Reset color
+                 spinWheelVisual.style.transition = 'transform 5s cubic-bezier(0.2, 0.8, 0.2, 1)';
+
+                const totalSegments = spinWheelSegments.length;
+                const anglePerSegment = 360 / totalSegments;
+                const randomSegmentIndex = Math.floor(Math.random() * totalSegments);
+                const randomAngleOffset = (Math.random() - 0.5) * anglePerSegment * 0.8;
+                const fullRotations = 5 * 360;
+                const targetAngle = -((randomSegmentIndex * anglePerSegment) + randomAngleOffset + fullRotations);
+
+                spinWheelVisual.style.transform = `rotate(${targetAngle}deg)`;
+
+                setTimeout(() => {
+                    spinWheelVisual.style.transition = 'none';
+                    const currentRotation = targetAngle % 360;
+                    spinWheelVisual.style.transform = `rotate(${currentRotation}deg)`;
+
+                    const winningSegment = spinWheelSegments[randomSegmentIndex];
+                    let resultMessage = '';
+                    let activityIcon = 'fas fa-dharmachakra';
+                    let activityBg = 'bg-green';
+                     let pointsUpdate = 0;
+                     let spinsUpdate = -1; // Always use one spin
+
+                    if (winningSegment.value === 'bonus_spin') {
+                        resultMessage = 'You won a Bonus Spin!';
+                        activityIcon = 'fas fa-redo';
+                        activityBg = 'bg-yellow';
+                        spinsUpdate = 0; // Net change is 0 (used 1, won 1)
+                    } else if (winningSegment.value > 0) {
+                         pointsUpdate = winningSegment.value;
+                        resultMessage = `You won ${pointsUpdate} points!`;
+                        activityIcon = 'fas fa-coins';
+                        activityBg = 'bg-blue';
+                    } else {
+                        resultMessage = 'Try Again!';
+                        activityIcon = 'fas fa-times-circle';
+                        activityBg = 'bg-red';
+                         // spinsUpdate is already -1
+                    }
+
+                     // Update Firestore
+                    db.collection('users').doc(currentUser.uid).update({
+                        points: firebase.firestore.FieldValue.increment(pointsUpdate),
+                        spins: firebase.firestore.FieldValue.increment(spinsUpdate)
+                    })
+                    .then(() => {
+                         console.log("Firestore updated for spin result.");
+                         addActivityLog(activityIcon, activityBg, `Spin Wheel: ${resultMessage}`, currentUser.uid);
+                     })
+                    .catch(error => {
+                         console.error("Error updating Firestore after spin:", error);
+                         resultMessage = "Spin complete, but error saving result.";
+                         spinResultText.style.color = 'var(--error-color)';
+                         // IMPORTANT: Consider how to handle this failure. Should the spin be refunded?
+                         // This highlights why server-side logic (Cloud Functions) is better.
+                    })
+                     .finally(() => {
+                         // Update result text and button state AFTER Firestore attempt
+                         spinResultText.textContent = resultMessage;
+                         isSpinning = false;
+                         setButtonLoading(spinNowBtn, false);
+                         // Let onSnapshot update the official spin count display
+                     });
+
+                }, 5100); // Slightly longer than animation
+            };
+
+
+            const handlePlaySlots = () => {
+                 if (isSlotSpinning || !currentUser || !userData || !(userData.tokens > 0)) {
+                     if (currentUser && userData && !(userData.tokens > 0)) {
+                         slotsResultText.textContent = "No tokens left!";
+                         slotsResultText.style.color = 'var(--error-color)';
+                     }
+                     return;
+                 }
+
+                 isSlotSpinning = true;
+                 setButtonLoading(playSlotsBtn, true);
+                 slotMachineTokens.textContent = userData.tokens - 1; // Show anticipated
+                 slotsResultText.textContent = 'Spinning reels...';
+                 slotsResultText.style.color = 'var(--primary-color)'; // Reset color
+
+                 const spinDuration = 1500;
+                 const stopDelay = 200;
+                 const symbolHeight = 60; // Must match CSS .reel-symbol height
+                 const results = []; // Store final symbol indices
+
+                reelSymbolContainers.forEach((container, index) => {
+                     container.style.transition = `top ${spinDuration / 1000}s linear`; // Continuous linear spin
+
+                     // Calculate a random final position
+                     const numSymbolsTotal = container.children.length;
+                     // Target a symbol within the middle repeats to ensure smooth stopping visual
+                     const targetSymbolIndex = Math.floor(Math.random() * slotSymbols.length);
+                     // Find an occurrence of this symbol index within the middle set of symbols
+                     const targetOccurrence = Math.floor(numSymbolsTotal / 2) + targetSymbolIndex;
+                     const finalPosition = -(targetOccurrence * symbolHeight) + symbolHeight; // Center the symbol
+
+                      // Apply final position with easing after delay
+                      setTimeout(() => {
+                          container.style.transition = `top 0.6s cubic-bezier(0.25, 1, 0.5, 1)`; // Ease out
+                          container.style.top = `${finalPosition}px`;
+                          results[index] = targetSymbolIndex; // Store result index
+
+                          // After last reel stops, check win
+                          if (index === reels.length - 1) {
+                              setTimeout(checkSlotWin, 700); // Wait for animation
+                          }
+                      }, spinDuration + (index * stopDelay));
+                 });
+
+
+                  // Placeholder function for actual win checking and Firestore update
+                 const checkSlotWin = () => {
+                    console.log("Final slot indices:", results);
+                     const finalSymbols = results.map(index => slotSymbols[index]);
+
+                     let win = false;
+                     let winAmount = 0;
+                     let resultMessage = `Result: ${finalSymbols.join(' ')} - No Win`;
+                     let activityIcon = 'fas fa-dice-three';
+                     let activityBg = 'bg-red';
+                     let tokensUpdate = -1; // Used one token
+
+                     // Simple Win Condition: 3 of the same
+                     if (results.length === 3 && results[0] === results[1] && results[1] === results[2]) {
+                         win = true;
+                         const winningSymbol = slotSymbols[results[0]];
+                         switch (winningSymbol) {
+                             case '🍒': winAmount = 10; break;
+                             case '🍋': winAmount = 15; break;
+                             case '🍊': winAmount = 20; break;
+                             case '🍉': winAmount = 30; break;
+                             case '🔔': winAmount = 50; break;
+                             case '⭐': winAmount = 75; break;
+                             case '７': winAmount = 100; break;
+                             default: winAmount = 5;
+                         }
+                         resultMessage = `Result: ${finalSymbols.join(' ')} - You won ${winAmount} points!`;
+                         activityIcon = 'fas fa-coins';
+                         activityBg = 'bg-blue';
+                     }
+
+                      // Update Firestore
+                     db.collection('users').doc(currentUser.uid).update({
+                         points: firebase.firestore.FieldValue.increment(winAmount),
+                         tokens: firebase.firestore.FieldValue.increment(tokensUpdate)
+                     })
+                     .then(() => {
+                         console.log("Firestore updated for slot result.");
+                         addActivityLog(activityIcon, activityBg, `Slot Machine: ${resultMessage.substring(resultMessage.indexOf('-') + 1).trim()}`, currentUser.uid);
+                     })
+                     .catch(error => {
+                         console.error("Error updating Firestore after slots:", error);
+                         resultMessage = "Slots played, but error saving result.";
+                         slotsResultText.style.color = 'var(--error-color)';
+                     })
+                     .finally(() => {
+                         slotsResultText.textContent = resultMessage;
+                         isSlotSpinning = false;
+                         setButtonLoading(playSlotsBtn, false);
+                         // Reset reel transitions for next spin
+                          reelSymbolContainers.forEach(container => container.style.transition = 'none');
+                     });
+                 };
+            };
+
+             const resetScratchCardVisual = () => {
+                scratchCardOverlay.classList.remove('scratched');
+                scratchCardOverlay.textContent = 'Click or Tap to Scratch!';
+                scratchCardResult.textContent = '? Pts'; // Reset prize display
+                scratchStatusText.textContent = 'Click the button or card above!';
+                 scratchStatusText.style.color = 'var(--text-color-medium)';
+             };
+
+             const handleScratchCard = () => {
+                 if (isScratching || !currentUser || !userData || !(userData.scratchCards > 0)) {
+                      if (currentUser && userData && !(userData.scratchCards > 0)) {
+                          scratchStatusText.textContent = "No scratch cards left today.";
+                          scratchStatusText.style.color = 'var(--error-color)';
+                      }
+                     return;
+                 }
+
+                 isScratching = true;
+                 setButtonLoading(scratchNowBtn, true);
+                 scratchCardsLeft.textContent = userData.scratchCards - 1; // Anticipated value
+                 scratchStatusText.textContent = 'Scratching...';
+                 scratchStatusText.style.color = 'var(--primary-color)';
+                 scratchCardOverlay.textContent = '...';
+
+                 // --- Determine Prize Client-Side (INSECURE) ---
+                 const randomPercent = Math.random() * 100;
+                 let cumulativeChance = 0;
+                 let chosenPrize = scratchCardPrizes[0]; // Default No Win
+                 for (const prize of scratchCardPrizes) {
+                     cumulativeChance += prize.chance;
+                     if (randomPercent <= cumulativeChance) {
+                         chosenPrize = prize;
+                         break;
+                     }
+                 }
+
+                 // --- Simulate Scratching Delay & Update ---
+                 setTimeout(() => {
+                     // Update the result area (underneath)
+                     scratchCardResult.textContent = chosenPrize.label;
+                     scratchCardResult.style.color = chosenPrize.value > 0 ? 'var(--success-color)' : 'var(--text-color-medium)';
+
+                     // Reveal the result
+                     scratchCardOverlay.classList.add('scratched');
+
+                     // Prepare Firestore update
+                     let resultMessage = '';
+                     let activityIcon = 'fas fa-clone';
+                     let activityBg = 'bg-yellow';
+                     let pointsUpdate = 0;
+                     let cardsUpdate = -1; // Used one card
+
+                     if (chosenPrize.value > 0) {
+                         pointsUpdate = chosenPrize.value;
+                         resultMessage = `You won ${pointsUpdate} points!`;
+                         activityIcon = 'fas fa-coins';
+                         activityBg = 'bg-blue';
+                     } else {
+                         resultMessage = 'No win this time. Try again tomorrow!';
+                         activityIcon = 'fas fa-times-circle';
+                         activityBg = 'bg-red';
+                     }
+
+                     // Update Firestore
+                     db.collection('users').doc(currentUser.uid).update({
+                         points: firebase.firestore.FieldValue.increment(pointsUpdate),
+                         scratchCards: firebase.firestore.FieldValue.increment(cardsUpdate)
+                     })
+                     .then(() => {
+                         console.log("Firestore updated for scratch card result.");
+                         addActivityLog(activityIcon, activityBg, `Scratch Card: ${resultMessage}`, currentUser.uid);
+                     })
+                     .catch(error => {
+                         console.error("Error updating Firestore after scratch:", error);
+                         resultMessage = "Card scratched, but error saving result.";
+                          scratchStatusText.style.color = 'var(--error-color)';
+                     })
+                     .finally(() => {
+                         scratchStatusText.textContent = resultMessage;
+                         isScratching = false;
+                         setButtonLoading(scratchNowBtn, false);
+                         // Don't reset visual here, let daily reset logic handle it via updateUI
+                     });
+
+                 }, 750);
+             };
+
+             // --- Daily Bonus Logic ---
+             const updateDailyBonusButton = () => {
+                 if (!userData) return; // Need userData
+
+                 // Check claim status AND if it's actually a new day if claimed previously
+                 let canClaim = false;
+                  if (!userData.dailyBonusClaimed) {
+                      canClaim = true;
+                  } else if (userData.lastBonusClaimDate) {
+                      const today = new Date(); today.setHours(0,0,0,0);
+                      const lastClaim = userData.lastBonusClaimDate.toDate(); lastClaim.setHours(0,0,0,0);
+                      if (today > lastClaim) {
+                          // It's a new day, but the flag might not have been reset yet by fetchUserData
+                          // Allow claim visually, the backend/update logic should handle the reset
+                          canClaim = true;
+                      }
+                  }
+
+
+                 if (!canClaim) {
+                     claimBonusBtn.disabled = true;
+                     claimBonusBtn.innerHTML = `<i class="fas fa-check"></i> Bonus Claimed Today`;
+                      dailyBonusMsg.textContent = "You've already claimed your bonus for today. Come back tomorrow!";
+                 } else {
+                     claimBonusBtn.disabled = false;
+                      claimBonusBtn.innerHTML = `<span class="spinner"></span><i class="fas fa-gift"></i> <span>Claim Today's Bonus</span>`;
+                      dailyBonusMsg.textContent = "You are eligible to claim your daily bonus points!";
+                      dailyBonusStatus.textContent = ""; // Clear previous status
+                 }
+             };
+
+            const handleClaimBonus = () => {
+                 // Re-check eligibility right before claiming
+                if (!currentUser || !userData || userData.dailyBonusClaimed) {
+                    // Check if it's a new day even if flag is true (in case reset hasn't propagated)
+                     let canClaimOverride = false;
+                     if (userData && userData.dailyBonusClaimed && userData.lastBonusClaimDate) {
+                         const today = new Date(); today.setHours(0,0,0,0);
+                         const lastClaim = userData.lastBonusClaimDate.toDate(); lastClaim.setHours(0,0,0,0);
+                         if (today > lastClaim) canClaimOverride = true;
+                     }
+                     if (!canClaimOverride) {
+                         console.log("Bonus claim blocked: Already claimed or user data missing.");
+                         return;
+                     }
+                     console.log("Attempting claim on new day despite potentially stale 'claimed' flag.");
+                 }
+
+
+                 setButtonLoading(claimBonusBtn, true);
+                 dailyBonusStatus.textContent = "Claiming bonus...";
+                 dailyBonusStatus.style.color = 'var(--primary-color)'; // Reset color
+
+                 const bonusAmount = 25; // Example fixed bonus
+                 const todayTimestamp = firebase.firestore.FieldValue.serverTimestamp(); // Use server time
+
+                 db.collection('users').doc(currentUser.uid).update({
+                     points: firebase.firestore.FieldValue.increment(bonusAmount),
+                     dailyBonusClaimed: true,
+                     lastBonusClaimDate: todayTimestamp // Record claim time
+                 })
+                 .then(() => {
+                     console.log("Daily bonus claimed and updated in Firestore.");
+                     dailyBonusStatus.textContent = `Success! You received ${bonusAmount} points.`;
+                     dailyBonusStatus.style.color = 'var(--success-color)';
+                     addActivityLog('fas fa-calendar-check', 'bg-green', `Daily Bonus: Claimed ${bonusAmount} points.`, currentUser.uid);
+                     // Button state will update via onSnapshot -> updateUI -> updateDailyBonusButton
+                 })
+                 .catch((error) => {
+                     console.error("Error claiming daily bonus:", error);
+                     dailyBonusStatus.textContent = "Error claiming bonus. Please try again.";
+                     dailyBonusStatus.style.color = 'var(--error-color)';
+                     // Ensure button gets enabled again if claim failed
+                     updateDailyBonusButton();
+                 })
+                 .finally(() => {
+                      setButtonLoading(claimBonusBtn, false);
+                 });
+            };
+
+             // --- Refer & Earn Logic ---
+             const handleCopyCode = () => {
+                 if (!currentUser || !userData || !userData.referralCode) return;
+                 const code = userData.referralCode;
+                 navigator.clipboard.writeText(code).then(() => {
+                     showMessage(copyStatusMsg, 'Referral code copied!', false); // Use utility
+                 }).catch(err => {
+                     showMessage(copyStatusMsg, 'Failed to copy code.', true); // Use utility
+                     console.error('Failed to copy text: ', err);
+                 });
+             };
+
+              // --- Redeem Points Logic (Simulation with Firestore logging) ---
+              const handleWithdrawRequest = (e) => {
+                  e.preventDefault();
+                  hideMessage(withdrawErrorMsg);
+                  hideMessage(withdrawSuccessMsg);
+
+                  if (!currentUser || !userData) return;
+
+                  const amount = parseInt(withdrawAmount.value);
+                  const method = withdrawForm.method.value;
+                  const details = withdrawForm.details.value.trim();
+
+                  // Validation
+                  if (!amount || amount < 2000) {
+                       showMessage(withdrawErrorMsg, 'Minimum withdrawal amount is 2000 points.');
+                       return;
+                  }
+                  if (amount > userData.points) {
+                       showMessage(withdrawErrorMsg, 'Insufficient points balance.');
+                       return;
+                  }
+                  if (!method) {
+                       showMessage(withdrawErrorMsg, 'Please select a withdrawal method.');
+                       return;
+                  }
+                  if (!details) {
+                      showMessage(withdrawErrorMsg, 'Please provide withdrawal details (Simulated - Do not use real info).');
+                      return;
+                  }
+
+                  setButtonLoading(withdrawSubmitBtn, true);
+
+                   // 1. Log the request to a separate collection
+                   const requestData = {
+                       userId: currentUser.uid,
+                       email: currentUser.email, // Log user email for easier lookup
+                       amount: amount,
+                       method: method,
+                       details: details, // Store the (fake) details provided
+                       status: 'pending', // Initial status
+                       requestedAt: firebase.firestore.FieldValue.serverTimestamp()
+                   };
+
+                   db.collection('withdrawalRequests').add(requestData)
+                       .then((docRef) => {
+                           console.log("Withdrawal request logged with ID:", docRef.id);
+                           // 2. If logging is successful, deduct points from user
+                           return db.collection('users').doc(currentUser.uid).update({
+                               points: firebase.firestore.FieldValue.increment(-amount)
+                           });
+                       })
+                       .then(() => {
+                           console.log("Points deducted successfully.");
+                           showMessage(withdrawSuccessMsg, `Withdrawal request for ${amount} points submitted successfully (Simulation). Your request is being processed.`, false);
+                           addActivityLog('fas fa-paper-plane', 'bg-purple', `Withdrawal: Requested ${amount} points via ${method}.`, currentUser.uid);
+                           withdrawForm.reset();
+                           // UI balance will update via onSnapshot
+                       })
+                       .catch(error => {
+                           console.error("Error processing withdrawal request:", error);
+                           showMessage(withdrawErrorMsg, `Error submitting request: ${error.message}`);
+                           // Consider if points should be refunded if deduction failed after logging? Complex!
+                       })
+                       .finally(() => {
+                            setButtonLoading(withdrawSubmitBtn, false);
+                       });
+              };
+
+
+            // --- Event Listeners ---
+            menuToggle.addEventListener('click', toggleSidebar);
+            sidebarOverlay.addEventListener('click', closeSidebar);
+
+             sidebarLinks.forEach(link => {
+                 link.addEventListener('click', (e) => {
+                     // Use querySelector for safer class checking
+                     if (link.closest('.logout-link')) {
+                         e.preventDefault();
+                         handleLogout();
+                     } else {
+                         const pageId = link.getAttribute('data-page');
+                         if (pageId) {
+                             e.preventDefault();
+                             showPage(pageId);
+                         }
+                     }
+                 });
+             });
+
+              // Also add listeners to nav-links outside the sidebar
+             document.querySelectorAll('.nav-link').forEach(link => {
+                  link.addEventListener('click', (e) => {
+                      const pageId = link.getAttribute('data-page');
+                      if (pageId) {
+                          e.preventDefault();
+                          showPage(pageId);
+                      }
+                  });
+             });
+
+            // Auth Forms
+            loginForm.addEventListener('submit', handleLogin);
+            registerForm.addEventListener('submit', handleRegister);
+
+            // Game Buttons
+            spinNowBtn.addEventListener('click', handleSpinWheel);
+            playSlotsBtn.addEventListener('click', handlePlaySlots);
+             scratchNowBtn.addEventListener('click', handleScratchCard);
+             scratchCardArea.addEventListener('click', handleScratchCard);
+
+            // Other Buttons
+            claimBonusBtn.addEventListener('click', handleClaimBonus);
+             copyCodeBtn.addEventListener('click', handleCopyCode);
+             withdrawForm.addEventListener('submit', handleWithdrawRequest);
+
+
+            // --- Initialisation ---
+             const initializeApp = () => {
+                 console.log("Initializing SpinEarn App...");
+                 generateWheelSegments();
+                 generateSlotSymbols();
+                 // Attach the auth state listener (already done above globally)
+                 // Initial UI state is set to logged-out by default
+                 updateUI();
+                 // Show initial page (login by default, onAuthStateChanged handles logged in case)
+                  showPage('login-content');
+                 console.log("App Initialized.");
+             }
+
+            initializeApp();
+
+        });
+    </script>
+</body>
+</html>
